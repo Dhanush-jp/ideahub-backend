@@ -19,7 +19,20 @@ public class JwtTokenProvider {
 
     public JwtTokenProvider(@Value("${app.jwt.secret}") String secret,
                             @Value("${app.jwt.access-token-expiration-ms}") long tokenExpirationMs) {
-        this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                    "Missing JWT configuration: set JWT_SECRET to a base64-encoded secret before starting the application."
+            );
+        }
+
+        try {
+            this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret.trim()));
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException(
+                    "Invalid JWT configuration: JWT_SECRET must be a base64-encoded key with at least 32 bytes once decoded.",
+                    ex
+            );
+        }
         this.tokenExpirationMs = tokenExpirationMs;
     }
 
